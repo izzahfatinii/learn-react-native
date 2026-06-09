@@ -28,6 +28,7 @@ export default function ChatScreen() {
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const value = useRef('value');
   const flatListRef = useRef<FlatList>(null);
 
   const formatTime = () => {
