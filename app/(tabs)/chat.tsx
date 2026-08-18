@@ -1,15 +1,16 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { askGeminiFlash } from '@/services/gemini.service';
 import React, { useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import tw from 'twrnc'; // Import twrnc
 
@@ -22,17 +23,49 @@ interface Message {
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', text: 'Hey! How is the new app coming along?', sender: 'them', timestamp: '10:00 AM' },
-    { id: '2', text: 'Going great! Just finished rebuilding the layout for the chat screen.', sender: 'me', timestamp: '10:01 AM' },
+    { id: '1', text: 'This is Gemini Flash 3.5. Please let me know if you have any questions!', sender: 'them', timestamp: formatTime() },
+    // { id: '2', text: 'Going great! Just finished rebuilding the layout for the chat screen.', sender: 'me', timestamp: '10:01 AM' },
   ]);
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  // const value = useRef('value');
   const flatListRef = useRef<FlatList>(null);
 
-  const formatTime = () => {
+  function formatTime() {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  }
+
+  // const handleSend = () => {
+  //   if (inputText.trim() === '') return;
+
+  //   const myMessage: Message = {
+  //     id: Date.now().toString(),
+  //     text: inputText.trim(),
+  //     sender: 'me',
+  //     timestamp: formatTime(),
+  //   };
+
+  //   setMessages((prev) => [...prev, myMessage]);
+  //   setInputText('');
+    
+  //   setIsTyping(true); 
+  //   scrollToBottom();
+
+  //   setTimeout(() => {
+  //     setIsTyping(false); 
+      
+  //     const theirReply: Message = {
+  //       id: (Date.now() + 1).toString(),
+  //       text: "Haaai 🚀",
+  //       sender: 'them',
+  //       timestamp: formatTime(),
+  //     };
+      
+  //     setMessages((prev) => [...prev, theirReply]);
+  //     scrollToBottom();
+  //   }, 2000); 
+  // };
 
   const handleSend = () => {
     if (inputText.trim() === '') return;
@@ -50,19 +83,35 @@ export default function ChatScreen() {
     setIsTyping(true); 
     scrollToBottom();
 
-    setTimeout(() => {
-      setIsTyping(false); 
-      
-      const theirReply: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Haaai 🚀",
-        sender: 'them',
-        timestamp: formatTime(),
-      };
-      
-      setMessages((prev) => [...prev, theirReply]);
-      scrollToBottom();
-    }, 2000); 
+    // Call Gemini Flash API
+    askGeminiFlash(inputText.trim())
+      .then((reply) => {
+        setIsTyping(false);
+        
+        const theirReply: Message = {
+          id: (Date.now() + 1).toString(),
+          text: reply || 'Please try again',
+          sender: 'them',
+          timestamp: formatTime(),
+        };
+        
+        setMessages((prev) => [...prev, theirReply]);
+        scrollToBottom();
+      })
+      .catch((error) => {
+        setIsTyping(false);
+        console.error('Gemini Error:', error);
+        
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: 'Sorry, something went wrong. Please try again.',
+          sender: 'them',
+          timestamp: formatTime(),
+        };
+        
+        setMessages((prev) => [...prev, errorMessage]);
+        scrollToBottom();
+      });
   };
 
   const scrollToBottom = () => {
